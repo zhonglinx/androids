@@ -3,11 +3,32 @@
     package="com.example.android">
 
     <application
-        android:allowBackup="true"
+        android:name=".MainApplication"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Androids" />
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".HomeActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.compass.CompassActivity"
+            android:exported="false"
+            android:label="@string/compass">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.SAMPLE_CODE" />
+            </intent-filter>
+        </activity>
+    </application>
 
 </manifest>
