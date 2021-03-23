@@ -5,6 +5,10 @@
     <data>
 
         <variable
+            name="action"
+            type="com.example.android.ui.home.HomeAction" />
+
+        <variable
             name="model"
             type="com.example.android.model.LaunchIntent" />
     </data>
@@ -16,6 +20,7 @@
         android:background="?selectableItemBackground"
         android:gravity="center"
         android:minHeight="?listPreferredItemHeightSmall"
+        android:onClick="@{() -> action.launch(model)}"
         android:paddingStart="?listPreferredItemPaddingStart"
         android:paddingTop="@dimen/margin_small"
         android:paddingEnd="?listPreferredItemPaddingEnd"

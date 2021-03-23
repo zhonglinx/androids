@@ -1,4 +1,4 @@
-package com.example.android.ui
+package com.example.android.ui.home
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -8,12 +8,10 @@ import com.example.android.domain.home.LoadLaunchIntentUseCase
 import com.example.android.model.LaunchIntent
 import com.example.android.model.data
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@ExperimentalCoroutinesApi
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val loadLaunchIntentUseCase: LoadLaunchIntentUseCase

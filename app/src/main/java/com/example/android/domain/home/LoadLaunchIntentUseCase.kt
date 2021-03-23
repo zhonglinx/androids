@@ -8,12 +8,10 @@ import com.example.android.model.LaunchIntent
 import com.example.android.model.Result
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-@ExperimentalCoroutinesApi
 class LoadLaunchIntentUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
     @IoDispatcher ioDispatcher: CoroutineDispatcher
