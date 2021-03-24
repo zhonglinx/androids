@@ -9,6 +9,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.android.databinding.ActivityCompassBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlin.math.ceil
 
 @AndroidEntryPoint
 class CompassActivity : AppCompatActivity(), SensorEventListener {

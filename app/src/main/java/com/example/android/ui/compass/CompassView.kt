@@ -1,16 +1,24 @@
 package com.example.android.ui.compass
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Camera
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Paint.Style.STROKE
 import android.graphics.Path
 import android.graphics.RadialGradient
 import android.graphics.Rect
 import android.graphics.Shader
-import android.graphics.Typeface
 import android.util.AttributeSet
+import android.util.Property
+import android.view.MotionEvent
 import android.view.View
+import android.view.animation.LinearInterpolator
 import androidx.core.graphics.withRotation
 import androidx.core.graphics.withSave
 import com.example.android.R
@@ -25,6 +33,24 @@ class CompassView @JvmOverloads constructor(
   attrs: AttributeSet? = null,
   defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
+
+  private val CAMERA_ROTATION_X: Property<CompassView, Float> =
+    object : Property<CompassView, Float>(Float::class.java, "cameraRotationX") {
+      override fun get(obj: CompassView): Float = obj.cameraRotationX
+
+      override fun set(obj: CompassView, value: Float) {
+        obj.cameraRotationX = value
+      }
+    }
+
+  private val CAMERA_ROTATION_Y: Property<CompassView, Float> =
+    object : Property<CompassView, Float>(Float::class.java, "cameraRotationY") {
+      override fun get(obj: CompassView): Float = obj.cameraRotationY
+
+      override fun set(obj: CompassView, value: Float) {
+        obj.cameraRotationY = value
+      }
+    }
 
   private val labels = listOf("N", "E", "S", "W")
 
@@ -48,6 +74,23 @@ class CompassView @JvmOverloads constructor(
   private val arrowPath = Path()
 
   private val shaderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+  private val camera = Camera()
+  private val cameraMatrix = Matrix()
+  private var cameraRotationX = 0f
+    set(value) {
+      if (field != value) {
+        field = value
+        invalidate()
+      }
+    }
+  private var cameraRotationY = 0f
+    set(value) {
+      if (field != value) {
+        field = value
+        invalidate()
+      }
+    }
 
   private val outerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
     color = getColor(R.color.compass_outer_color)
@@ -73,8 +116,10 @@ class CompassView @JvmOverloads constructor(
 
   var degree: Float = 0f
     set(value) {
-      field = value
-      invalidate()
+      if (field != value) {
+        field = value
+        invalidate()
+      }
     }
 
   init {
@@ -126,7 +171,49 @@ class CompassView @JvmOverloads constructor(
     shaderPaint.shader = shader
   }
 
+  @SuppressLint("ClickableViewAccessibility")
+  override fun onTouchEvent(event: MotionEvent): Boolean {
+    when (event.action) {
+      MotionEvent.ACTION_MOVE -> {
+        val dx = (centerX - event.x) / outerRadius
+        val dy = (centerY - event.y) / outerRadius
+
+        setCameraRotation(dx * 10, dy * 10)
+      }
+      MotionEvent.ACTION_UP -> {
+        startRestoreAnimation()
+      }
+    }
+    return true
+  }
+
+  private fun startRestoreAnimation() {
+    val animatorX = ObjectAnimator.ofFloat(this, CAMERA_ROTATION_X, cameraRotationX, 0f)
+    val animatorY = ObjectAnimator.ofFloat(this, CAMERA_ROTATION_Y, cameraRotationY, 0f)
+
+    AnimatorSet().apply {
+      playTogether(animatorX, animatorY)
+      interpolator = LinearInterpolator()
+      duration = 300L
+      start()
+    }
+  }
+
+  private fun setCameraRotation(rotationX: Float, rotationY: Float) {
+    cameraRotationX = rotationX
+    cameraRotationY = rotationY
+    invalidate()
+  }
+
   override fun onDraw(canvas: Canvas) {
+    camera.save()
+    camera.rotate(cameraRotationX, cameraRotationY, 0f)
+    camera.getMatrix(cameraMatrix)
+    camera.restore()
+    cameraMatrix.preTranslate(-centerX, -centerY)
+    cameraMatrix.postTranslate(centerX, centerY)
+    canvas.concat(cameraMatrix)
+
     // 绘制中间渐变
     drawGradient(canvas)
     // 绘制外层
@@ -141,6 +228,21 @@ class CompassView @JvmOverloads constructor(
     val startX = centerX - textBound.width() / 2f
     val baseline = centerY + textBound.height() / 2f
     canvas.drawText(offsetDegree, startX, baseline, textPaint)
+
+    innerPaint.apply {
+      color = getColor(R.color.compass_indicator_color)
+      style = STROKE
+    }
+    canvas.drawArc(
+      centerX - innerRadius,
+      centerY - innerRadius,
+      centerX + innerRadius,
+      centerY + innerRadius,
+      -90f,
+      if (abs(degree) > 180) 360 + degree else degree,
+      false,
+      innerPaint
+    )
   }
 
   private fun drawGradient(canvas: Canvas) {
@@ -148,7 +250,7 @@ class CompassView @JvmOverloads constructor(
   }
 
   private fun drawOuter(canvas: Canvas) {
-    outerPaint.style = Paint.Style.STROKE
+    outerPaint.style = STROKE
     canvas.drawArc(
       centerX - outerRadius,
       centerY - outerRadius,
@@ -174,7 +276,7 @@ class CompassView @JvmOverloads constructor(
   private fun drawInner(canvas: Canvas) {
     innerPaint.apply {
       color = getColor(R.color.compass_inner_color)
-      style = Paint.Style.STROKE
+      style = STROKE
     }
     canvas.drawCircle(centerX, centerY, innerRadius, innerPaint)
 
