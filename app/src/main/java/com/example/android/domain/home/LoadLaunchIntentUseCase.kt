@@ -23,7 +23,6 @@ class LoadLaunchIntentUseCase @Inject constructor(
                 addCategory(Intent.CATEGORY_SAMPLE_CODE)
             }
             val pm = context.packageManager
-
             val launchIntent = pm.queryIntentActivities(intent, 0).map { info ->
                 val label = info.loadLabel(pm)?.toString() ?: info.activityInfo.name
                 LaunchIntent(

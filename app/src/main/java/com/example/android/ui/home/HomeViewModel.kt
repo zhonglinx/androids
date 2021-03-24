@@ -14,16 +14,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val loadLaunchIntentUseCase: LoadLaunchIntentUseCase
+  private val loadLaunchIntentUseCase: LoadLaunchIntentUseCase
 ) : ViewModel() {
 
-    private val _launchIntents: MutableLiveData<List<LaunchIntent>> = MutableLiveData()
-    val launchIntents: LiveData<List<LaunchIntent>>
-        get() = _launchIntents
+  private val _launchIntents: MutableLiveData<List<LaunchIntent>> = MutableLiveData()
+  val launchIntents: LiveData<List<LaunchIntent>>
+    get() = _launchIntents
 
-    init {
-        viewModelScope.launch {
-            loadLaunchIntentUseCase(Unit).collect { _launchIntents.postValue(it.data) }
-        }
+  init {
+    viewModelScope.launch {
+      loadLaunchIntentUseCase(Unit).collect { _launchIntents.postValue(it.data) }
     }
+  }
 }

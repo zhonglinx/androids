@@ -8,13 +8,11 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class CompassActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityCompassBinding
+  private lateinit var binding: ActivityCompassBinding
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
 
-        binding = ActivityCompassBinding.inflate(layoutInflater).also { setContentView(it.root) }
-
-    }
-
+    binding = ActivityCompassBinding.inflate(layoutInflater).also { setContentView(it.root) }
+  }
 }

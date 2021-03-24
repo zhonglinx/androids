@@ -17,60 +17,66 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class HomeActivity : AppCompatActivity(), HomeAction {
 
-    private val viewModel: HomeViewModel by viewModels()
+  private val viewModel: HomeViewModel by viewModels()
 
-    private val adapter = LaunchIntentAdapter(this)
+  private val adapter = LaunchIntentAdapter(this)
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_home)
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_home)
 
-        findViewById<RecyclerView>(R.id.launch_intents).apply {
-            adapter = this@HomeActivity.adapter
-            addItemDecoration(DividerItemDecoration(this@HomeActivity, VERTICAL))
-        }
-
-        viewModel.launchIntents.observe(this) { launchIntents ->
-            adapter.submitList(launchIntents)
-        }
+    findViewById<RecyclerView>(R.id.launch_intents).apply {
+      adapter = this@HomeActivity.adapter
+      addItemDecoration(DividerItemDecoration(this@HomeActivity, VERTICAL))
     }
 
-    override fun launch(launchIntent: LaunchIntent) {
-        startActivity(launchIntent.intent)
+    viewModel.launchIntents.observe(this) { launchIntents ->
+      adapter.submitList(launchIntents)
     }
+  }
 
+  override fun launch(launchIntent: LaunchIntent) {
+    startActivity(launchIntent.intent)
+  }
 }
 
 class LaunchIntentAdapter(
-    private val action: HomeAction
+  private val action: HomeAction
 ) : ListAdapter<LaunchIntent, LaunchIntentViewHolder>(LaunchIntent.Diff) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LaunchIntentViewHolder {
-        return LaunchIntentViewHolder(
-            LaunchIntentItemBinding.inflate(
-                LayoutInflater.from(parent.context),
-                parent,
-                false
-            )
-        )
-    }
+  override fun onCreateViewHolder(
+    parent: ViewGroup,
+    viewType: Int
+  ): LaunchIntentViewHolder {
+    return LaunchIntentViewHolder(
+      LaunchIntentItemBinding.inflate(
+        LayoutInflater.from(parent.context),
+        parent,
+        false
+      )
+    )
+  }
 
-    override fun onBindViewHolder(holder: LaunchIntentViewHolder, position: Int) {
-        holder.bind(getItem(position), action)
-    }
-
+  override fun onBindViewHolder(
+    holder: LaunchIntentViewHolder,
+    position: Int
+  ) {
+    holder.bind(getItem(position), action)
+  }
 }
 
 class LaunchIntentViewHolder(
-    private val binding: LaunchIntentItemBinding
+  private val binding: LaunchIntentItemBinding
 ) : RecyclerView.ViewHolder(binding.root) {
 
-    fun bind(item: LaunchIntent, action: HomeAction) {
-        binding.apply {
-            model = item
-            this.action = action
-            executePendingBindings()
-        }
+  fun bind(
+    item: LaunchIntent,
+    action: HomeAction
+  ) {
+    binding.apply {
+      model = item
+      this.action = action
+      executePendingBindings()
     }
-
+  }
 }

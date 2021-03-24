@@ -4,6 +4,5 @@ import com.example.android.model.LaunchIntent
 
 interface HomeAction {
 
-    fun launch(launchIntent: LaunchIntent)
-
+  fun launch(launchIntent: LaunchIntent)
 }

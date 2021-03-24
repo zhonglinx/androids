@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">androids</string>
+  <string name="app_name">androids</string>
 
-    <string name="compass">Compass</string>
+  <string name="compass">Compass</string>
 </resources>
