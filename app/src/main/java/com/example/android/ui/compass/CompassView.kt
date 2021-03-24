@@ -6,13 +6,18 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RadialGradient
+import android.graphics.Rect
 import android.graphics.Shader
+import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
-import androidx.core.content.ContextCompat
+import androidx.core.graphics.withRotation
 import androidx.core.graphics.withSave
 import com.example.android.R
+import com.example.android.util.getColor
 import java.lang.Math.toDegrees
+import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.sin
 
 class CompassView @JvmOverloads constructor(
@@ -20,6 +25,10 @@ class CompassView @JvmOverloads constructor(
   attrs: AttributeSet? = null,
   defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
+
+  private val labels = listOf("N", "E", "S", "W")
+
+  private val degreeLabels = listOf("30", "60", "120", "150", "210", "240", "300", "330")
 
   /** 外层半径 */
   private var outerRadius = 0f
@@ -38,12 +47,10 @@ class CompassView @JvmOverloads constructor(
 
   private val arrowPath = Path()
 
-  private lateinit var shader: Shader
-
   private val shaderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
   private val outerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-    color = ContextCompat.getColor(getContext(), R.color.compass_outer_color)
+    color = getColor(R.color.compass_outer_color)
     strokeWidth = 4f
   }
 
@@ -52,8 +59,39 @@ class CompassView @JvmOverloads constructor(
   }
 
   private val scalePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-    color = ContextCompat.getColor(getContext(), R.color.compass_inner_color)
+    color = getColor(R.color.compass_inner_color)
     strokeWidth = 3f
+  }
+
+  private val textBound = Rect()
+
+  private val labelPaint: Paint
+
+  private val degreePaint: Paint
+
+  private val textPaint: Paint
+
+  var degree: Float = 0f
+    set(value) {
+      field = value
+      invalidate()
+    }
+
+  init {
+    val density = resources.displayMetrics.scaledDensity
+    labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      textSize = density * LABEL_TEXT_SIZE
+    }
+
+    degreePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      textSize = density * DEGREE_TEXT_SIZE
+      color = getColor(R.color.compass_inner_color)
+    }
+
+    textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      textSize = density * OFFSET_DEGREE_TEXT_SIZE
+      color = getColor(R.color.white)
+    }
   }
 
   override fun onSizeChanged(
@@ -74,12 +112,12 @@ class CompassView @JvmOverloads constructor(
     centerX = w / 2f
     centerY = h / 2f
 
-    shader = RadialGradient(
+    val shader = RadialGradient(
       centerX,
       centerY,
       gradientRadius,
       intArrayOf(
-        ContextCompat.getColor(context, R.color.compass_outer_color),
+        getColor(R.color.compass_outer_color),
         Color.TRANSPARENT
       ),
       floatArrayOf(0f, 1f),
@@ -94,7 +132,15 @@ class CompassView @JvmOverloads constructor(
     // 绘制外层
     drawOuter(canvas)
     // 绘制内层
-    drawInner(canvas)
+    canvas.withRotation(degrees = degree, centerX, centerY) {
+      drawInner(canvas)
+    }
+    // 绘制偏移的度数
+    val offsetDegree = "${abs(ceil(degree).toInt())}°"
+    textPaint.getTextBounds(offsetDegree, 0, offsetDegree.length, textBound)
+    val startX = centerX - textBound.width() / 2f
+    val baseline = centerY + textBound.height() / 2f
+    canvas.drawText(offsetDegree, startX, baseline, textPaint)
   }
 
   private fun drawGradient(canvas: Canvas) {
@@ -120,52 +166,95 @@ class CompassView @JvmOverloads constructor(
     )
 
     // 绘制三角形
+    makeArrowPathByRadius(outerRadius)
     outerPaint.style = Paint.Style.FILL_AND_STROKE
-    arrowPath.run {
-      reset()
-      moveTo(centerX - arrowWidth / 2f, centerY - outerRadius)
-      lineTo(centerX + arrowWidth / 2f, centerY - outerRadius)
-      lineTo(centerX, centerY - outerRadius - arrowWidth * sin(toDegrees(60.0)).toFloat())
-      close()
-    }
-
     canvas.drawPath(arrowPath, outerPaint)
   }
 
   private fun drawInner(canvas: Canvas) {
     innerPaint.apply {
-      color = ContextCompat.getColor(context, R.color.compass_inner_color)
+      color = getColor(R.color.compass_inner_color)
       style = Paint.Style.STROKE
     }
     canvas.drawCircle(centerX, centerY, innerRadius, innerPaint)
 
-    arrowPath.run {
-      reset()
-      moveTo(centerX - arrowWidth / 2f, centerY - innerRadius)
-      lineTo(centerX + arrowWidth / 2f, centerY - innerRadius)
-      lineTo(centerX, centerY - innerRadius - arrowWidth * sin(toDegrees(60.0)).toFloat())
-      close()
-    }
+    // 绘制指南针
+    makeArrowPathByRadius(innerRadius)
 
     innerPaint.apply {
-      color = ContextCompat.getColor(context, R.color.compass_indicator_color)
+      color = getColor(R.color.compass_indicator_color)
       style = Paint.Style.FILL_AND_STROKE
     }
     canvas.drawPath(arrowPath, innerPaint)
 
     // 绘制刻度
+    val offset = centerY - innerRadius + 14
+
     canvas.withSave {
       val x = centerX - scalePaint.strokeWidth / 2f
-      val offset = centerY - innerRadius + 14
-      repeat(360) {
-        if (it % 90 == 0) {
-          scalePaint.color = ContextCompat.getColor(context, R.color.compass_inner_color)
+      repeat(240) { index ->
+        if (index % 60 == 0) {
+          scalePaint.color = getColor(R.color.compass_inner_color)
         } else {
-          scalePaint.color = ContextCompat.getColor(context, R.color.compass_outer_color)
+          scalePaint.color = getColor(R.color.compass_outer_color)
         }
         drawLine(x, offset, x, offset + scaleHeight, scalePaint)
-        rotate(1f, centerX, centerY)
+
+        rotate(1.5f, centerX, centerY)
       }
     }
+
+    // 绘制方位
+    drawPosition(canvas, offset = offset + scaleHeight)
+    // 绘制度数
+    drawDegree(canvas, offset + scaleHeight)
+  }
+
+  private fun drawPosition(canvas: Canvas, offset: Float) {
+    canvas.withSave {
+      labels.forEachIndexed { index, label ->
+        if (index == 0) {
+          labelPaint.color = getColor(R.color.compass_indicator_color)
+        } else {
+          labelPaint.color = getColor(R.color.white)
+        }
+        labelPaint.getTextBounds(label, 0, label.length, textBound)
+
+        val startX = centerX - textBound.width() / 2f
+        val baseline = offset + textBound.height() + 10
+
+        canvas.drawText(label, startX, baseline, labelPaint)
+
+        canvas.rotate(90f, centerX, centerY)
+      }
+    }
+  }
+
+  private fun drawDegree(canvas: Canvas, offset: Float) {
+    canvas.withSave {
+      degreeLabels.forEachIndexed { index, degree ->
+        degreePaint.getTextBounds(degree, 0, degree.length, textBound)
+        val startX = centerX - textBound.width() / 2f
+        val baseline = offset + 10 + textBound.height()
+        canvas.rotate(if (index % 2 == 0 && index != 0) 60f else 30f, centerX, centerY)
+        canvas.drawText(degree, startX, baseline, degreePaint)
+      }
+    }
+  }
+
+  private fun makeArrowPathByRadius(radius: Float) {
+    arrowPath.run {
+      reset()
+      moveTo(centerX - arrowWidth / 2f, centerY - radius)
+      lineTo(centerX + arrowWidth / 2f, centerY - radius)
+      lineTo(centerX, centerY - radius - arrowWidth * sin(toDegrees(60.0)).toFloat())
+      close()
+    }
+  }
+
+  companion object {
+    private const val LABEL_TEXT_SIZE = 13
+    private const val DEGREE_TEXT_SIZE = 8
+    private const val OFFSET_DEGREE_TEXT_SIZE = 40
   }
 }
